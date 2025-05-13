@@ -1,7 +1,34 @@
 import 'package:flutter/material.dart';
 
-class LandingPage extends StatelessWidget {
+class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
+
+  @override
+  State<LandingPage> createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage> {
+  int _selectedIndex = 0;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    // Navigation logic
+    switch (index) {
+      case 0: // Home
+        Navigator.pushNamed(context, '/home');
+        break;
+      case 1: // Create Post
+        // Will navigate to create post when user is logged in
+        Navigator.pushNamed(context, '/login');
+        break;
+      case 2: // Profile
+        Navigator.pushNamed(context, '/login');
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
