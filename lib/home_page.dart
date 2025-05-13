@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_service.dart';
+import 'post_service.dart';
+import 'post.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -9,6 +11,8 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final AuthService auth = AuthService();
+
+    final postService = PostService();
 
     return Scaffold(
       appBar: AppBar(
@@ -28,6 +32,16 @@ class HomePage extends StatelessWidget {
           children: [
             Text('Welcome ${user?.displayName ?? 'User'}!'),
             Text('Email: ${user?.email ?? 'No email'}'),
+            ElevatedButton(
+              onPressed: () {
+                // This is where you navigate to the CreatePostScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CreatePostScreen()),
+                );
+              },
+              child: Text('Create New Post'),
+            ),
             const SizedBox(height: 20),
             if (user?.photoURL != null)
               CircleAvatar(
