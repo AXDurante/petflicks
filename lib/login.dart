@@ -28,10 +28,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Login'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -114,10 +111,10 @@ class _LoginPageState extends State<LoginPage> {
                                   email: _emailController.text.trim(),
                                   password: _passwordController.text.trim(),
                                 );
-                                // If successful, navigate to home
+                                // Navigate to the feed page instead of home
                                 Navigator.pushReplacementNamed(
                                   context,
-                                  '/home',
+                                  '/feed',
                                 );
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
