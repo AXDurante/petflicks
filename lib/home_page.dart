@@ -8,7 +8,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final AuthService _auth = AuthService();
+    final AuthService auth = AuthService();
 
     return Scaffold(
       appBar: AppBar(
@@ -17,7 +17,7 @@ class HomePage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await _auth.signOut();
+              await auth.signOut();
             },
           ),
         ],
