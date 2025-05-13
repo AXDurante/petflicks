@@ -169,10 +169,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                   password: _passwordController.text.trim(),
                                   name: _nameController.text.trim(),
                                 );
-                                // If successful, navigate to home
+                                // If successful, navigate to feed
                                 Navigator.pushReplacementNamed(
                                   context,
-                                  '/home',
+                                  '/feed',
                                 );
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(

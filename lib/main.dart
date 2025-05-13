@@ -9,6 +9,7 @@ import 'login.dart';
 import 'register.dart';
 import 'auth_service.dart';
 import 'home_page.dart';
+import 'create_post.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,8 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/home': (context) => const HomePage(),
+        '/feed': (context) => const LandingPage(),
+        '/create_post': (context) => const CreatePostPage(),
       },
       debugShowCheckedModeBanner: false,
     );
@@ -51,9 +54,9 @@ class AuthWrapper extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.active) {
           final user = snapshot.data;
           if (user == null) {
-            return const LandingPage();
+            return const LoginPage();
           }
-          return const HomePage();
+          return const LandingPage();
         }
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
