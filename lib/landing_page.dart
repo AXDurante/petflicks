@@ -21,7 +21,6 @@ class _LandingPageState extends State<LandingPage> {
         Navigator.pushNamed(context, '/home');
         break;
       case 1: // Create Post
-        // Will navigate to create post when user is logged in
         Navigator.pushNamed(context, '/login');
         break;
       case 2: // Profile
@@ -33,22 +32,31 @@ class _LandingPageState extends State<LandingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 40),
-            const Text(
-              'Welcome to Petflix',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
-              ),
+            const SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/images/boxlogopflix.png',
+                  height: 300,
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  '',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            // Image.asset('assets/images/app_logo.png', height: 200),
             const SizedBox(height: 40),
             const Text(
               'Get started by creating an account or logging in',
@@ -64,7 +72,7 @@ class _LandingPageState extends State<LandingPage> {
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Colors.black,
                 ),
                 child: const Text(
                   'Register',

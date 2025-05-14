@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
-import 'post_service.dart'; // The service we created earlier
+import 'post_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -21,15 +21,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   bool _isUploading = false;
   bool _imageError = false;
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(ImageSource source) async {
     try {
       final pickedFile = await _picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         imageQuality: 80,
       );
       if (pickedFile != null) {
         final file = File(pickedFile.path);
-        // Verify the file exists and is readable
         if (await file.exists()) {
           setState(() {
             _imageFile = file;
@@ -50,38 +49,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
-  Future<void> _takePhoto() async {
-    try {
-      final pickedFile = await _picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 80,
-      );
-      if (pickedFile != null) {
-        final file = File(pickedFile.path);
-        // Verify the file exists and is readable
-        if (await file.exists()) {
-          setState(() {
-            _imageFile = file;
-            _imageError = false;
-          });
-        } else {
-          setState(() {
-            _imageError = true;
-          });
-          _showErrorMessage('Camera image file not accessible');
-        }
-      }
-    } catch (e) {
-      setState(() {
-        _imageError = true;
-      });
-      _showErrorMessage('Error taking photo: ${e.toString()}');
-    }
-  }
-
   void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+      SnackBar(content: Text(message), backgroundColor: Colors.black),
     );
   }
 
@@ -94,23 +64,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   Future<void> _uploadPost() async {
     if (_postController.text.isEmpty && _imageFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter text or add an image for your post'),
-        ),
-      );
+      _showErrorMessage('Please enter text or add an image for your post');
       return;
     }
 
     if (_imageError) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'There was an issue with the selected image. Please try another image.',
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showErrorMessage('Issue with the image. Try another one.');
       return;
     }
 
@@ -123,59 +82,42 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     try {
       String? imageUrl;
       if (_imageFile != null) {
-        // Check if file is readable
         try {
           await _imageFile!.readAsBytes();
         } catch (e) {
-          throw Exception('Cannot read the image file: ${e.toString()}');
+          throw Exception('Cannot read image: ${e.toString()}');
         }
 
-        // Upload image with progress tracking
-        final fileName = 'posts/${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final fileName = 'posts/${DateTime.now().millisecondsSinceEpoch}_${_imageFile!.path.split('/').last}';
         final ref = FirebaseStorage.instance.ref().child(fileName);
 
         final uploadTask = ref.putFile(_imageFile!);
+        final snapshot = await uploadTask;
 
-        // Listen to upload progress
-        uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-          final progress = snapshot.bytesTransferred / snapshot.totalBytes;
-          setState(() {
-            _uploadProgress = progress;
-          });
-        });
-
-        // Wait for upload to complete
-        await uploadTask;
-
-        // Get download URL
-        imageUrl = await ref.getDownloadURL();
+        if (snapshot.state == TaskState.success) {
+          imageUrl = await ref.getDownloadURL();
+        } else {
+          throw Exception('Image upload failed.');
+        }
       }
 
-      // Create post with the retrieved image URL
       await _postService.createPost(
         content: _postController.text,
         imageUrl: imageUrl,
         context: context,
       );
 
-      // Clear form after successful post
       _postController.clear();
       setState(() {
         _imageFile = null;
         _imageError = false;
       });
 
-      // Return to previous screen
       if (mounted) {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showErrorMessage('Upload failed: ${e.toString()}');
     } finally {
       setState(() {
         _isLoading = false;
@@ -193,266 +135,119 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Create Post'),
+        backgroundColor: Colors.white,
+        title: const Text('Create Post', style: TextStyle(color: Colors.black)),
         centerTitle: true,
-        backgroundColor: Colors.blue.shade50,
         actions: [
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
-          else
-            TextButton.icon(
-              icon: const Icon(Icons.send),
-              label: const Text('Post'),
-              onPressed: _uploadPost,
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.blue,
-                textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          _isLoading
+              ? const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.black,
               ),
             ),
+          )
+              : IconButton(
+            icon: const Icon(Icons.send, color: Colors.black),
+            onPressed: _uploadPost,
+          ),
         ],
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // User info section
-              Row(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.grey,
+                  child: Icon(Icons.person, color: Colors.black),
+                ),
+                const SizedBox(width: 12),
+                const Text("What's on your mind?", style: TextStyle(color: Colors.black, fontSize: 16)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _postController,
+              style: const TextStyle(color: Colors.black),
+              decoration: const InputDecoration(
+                hintText: "Share something...",
+                hintStyle: TextStyle(color: Colors.black),
+                border: InputBorder.none,
+              ),
+              maxLines: 5,
+              minLines: 3,
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            if (_imageFile != null && !_imageError) ...[
+              const SizedBox(height: 16),
+              Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.blue.shade100,
-                    child: Icon(
-                      Icons.person,
-                      color: Colors.blue.shade700,
-                      size: 30,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(
+                      _imageFile!,
+                      width: double.infinity,
+                      height: 250,
+                      fit: BoxFit.cover,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'What\'s on your mind?',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: Colors.white54,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, size: 16, color: Colors.black),
+                        onPressed: _clearImage,
+                      ),
+                    ),
                   ),
                 ],
               ),
+            ],
+            if (_isUploading && _uploadProgress > 0) ...[
               const SizedBox(height: 16),
-
-              // Text input
-              TextField(
-                controller: _postController,
-                decoration: const InputDecoration(
-                  hintText: "Share something about your pets...",
-                  border: InputBorder.none,
-                ),
-                maxLines: 5,
-                minLines: 3,
-                textCapitalization: TextCapitalization.sentences,
+              LinearProgressIndicator(
+                value: _uploadProgress,
+                backgroundColor: Colors.grey.shade800,
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.black),
               ),
-
-              // Image preview
-              if (_imageFile != null && !_imageError) ...[
-                const SizedBox(height: 16),
-                Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Builder(
-                        builder: (context) {
-                          try {
-                            return Image.file(
-                              _imageFile!,
-                              width: double.infinity,
-                              height: 250,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                // Handle image load error
-                                WidgetsBinding.instance.addPostFrameCallback((
-                                  _,
-                                ) {
-                                  setState(() {
-                                    _imageError = true;
-                                  });
-                                });
-                                return Container(
-                                  width: double.infinity,
-                                  height: 250,
-                                  color: Colors.grey.shade200,
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.broken_image,
-                                      size: 50,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          } catch (e) {
-                            // Set error state if we can't display the image
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              setState(() {
-                                _imageError = true;
-                              });
-                            });
-                            return Container(
-                              width: double.infinity,
-                              height: 250,
-                              color: Colors.grey.shade200,
-                              child: const Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  size: 50,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.black54,
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.close,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                          onPressed: _clearImage,
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-
-              // Show error message if image couldn't be loaded
-              if (_imageError) ...[
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: Colors.red,
-                            size: 18,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Image Error',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'There was a problem with the selected image. Please try selecting another image.',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: _clearImage,
-                        child: const Text('Clear Image'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-              // Upload progress indicator
-              if (_isUploading && _uploadProgress > 0) ...[
-                const SizedBox(height: 16),
-                LinearProgressIndicator(
-                  value: _uploadProgress,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Uploading image: ${(_uploadProgress * 100).toStringAsFixed(0)}%',
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-                ),
-              ],
-
-              const SizedBox(height: 24),
-
-              // Action buttons
-              Divider(color: Colors.grey.shade300),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    InkWell(
-                      onTap: _isLoading ? null : _pickImage,
-                      borderRadius: BorderRadius.circular(30),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 8.0,
-                          horizontal: 16.0,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.photo_library,
-                              color: Colors.green.shade600,
-                            ),
-                            const SizedBox(width: 8),
-                            const Text('Gallery'),
-                          ],
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: _isLoading ? null : _takePhoto,
-                      borderRadius: BorderRadius.circular(30),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 8.0,
-                          horizontal: 16.0,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.camera_alt, color: Colors.blue.shade600),
-                            const SizedBox(width: 8),
-                            const Text('Camera'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 8),
+              Text(
+                'Uploading: ${(_uploadProgress * 100).toStringAsFixed(0)}%',
+                style: const TextStyle(color: Colors.black),
               ),
             ],
-          ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _isLoading ? null : () => _pickImage(ImageSource.gallery),
+                  icon: const Icon(Icons.photo, color: Colors.white),
+                  label: const Text('Gallery', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _isLoading ? null : () => _pickImage(ImageSource.camera),
+                  icon: const Icon(Icons.camera_alt, color: Colors.white),
+                  label: const Text('Camera', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
