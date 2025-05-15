@@ -14,6 +14,7 @@ class PostService {
   Future<void> createPost({
     required String content,
     String? imageUrl,
+    String? url,
     required BuildContext context,
   }) async {
     try {
@@ -37,6 +38,11 @@ class PostService {
       // Add image URL if provided
       if (imageUrl != null && imageUrl.isNotEmpty) {
         postData['post_image'] = imageUrl;
+      }
+
+      // Add URL if provided
+      if (url != null && url.isNotEmpty) {
+        postData['post_url'] = url;
       }
 
       // Add to Firestore
@@ -81,6 +87,7 @@ class PostService {
     required String postId,
     String? content,
     String? imageUrl,
+    String? url,
   }) async {
     try {
       final updateData = <String, dynamic>{
@@ -93,6 +100,10 @@ class PostService {
 
       if (imageUrl != null) {
         updateData['post_image'] = imageUrl;
+      }
+
+      if (url != null) {
+        updateData['post_url'] = url;
       }
 
       await _postsCollection.doc(postId).update(updateData);

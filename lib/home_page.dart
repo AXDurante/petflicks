@@ -41,9 +41,10 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-
   Widget _buildUserAvatar({String? photoUrl, double radius = 24}) {
-    if (photoUrl == null || photoUrl.isEmpty || photoUrl.contains('example.com')) {
+    if (photoUrl == null ||
+        photoUrl.isEmpty ||
+        photoUrl.contains('example.com')) {
       return CircleAvatar(
         radius: radius,
         backgroundColor: Colors.grey.shade300,
@@ -71,10 +72,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Image.asset(
-          'assets/images/petflickslogo1.png',
-          height: 40,
-        ),
+        title: Image.asset('assets/images/petflickslogo1.png', height: 40),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 1,
@@ -143,10 +141,15 @@ class _HomePageState extends State<HomePage> {
                     final postId = snapshot.data!.docs[index].id;
                     final timestamp = post['date_created'] as Timestamp?;
                     final postDate = timestamp?.toDate() ?? DateTime.now();
-                    final String? imageUrl = post['post_image'];
+                    final String? imageUrl = post['post_url'];
+
+                    print('Post data: ${post.toString()}');
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 8.0,
+                      ),
                       child: Card(
                         color: Colors.white,
                         elevation: 3,
@@ -163,7 +166,8 @@ class _HomePageState extends State<HomePage> {
                                   _buildUserAvatar(radius: 20),
                                   const SizedBox(width: 12),
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'User',
@@ -184,28 +188,38 @@ class _HomePageState extends State<HomePage> {
                                   const Spacer(),
                                   if (post['FK_users_Id'] == user?.uid)
                                     PopupMenuButton<String>(
-                                      icon: const Icon(Icons.more_vert, color: Colors.black),
+                                      icon: const Icon(
+                                        Icons.more_vert,
+                                        color: Colors.black,
+                                      ),
                                       onSelected: (value) {
                                         if (value == 'delete') {
                                           _postService.deletePost(postId);
                                         }
                                       },
-                                      itemBuilder: (context) => [
-                                        const PopupMenuItem<String>(
-                                          value: 'delete',
-                                          child: Text('Delete'),
-                                        ),
-                                      ],
+                                      itemBuilder:
+                                          (context) => [
+                                            const PopupMenuItem<String>(
+                                              value: 'delete',
+                                              child: Text('Delete'),
+                                            ),
+                                          ],
                                     ),
                                 ],
                               ),
                             ),
                             if (post['post_content'] != null)
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 8,
+                                ),
                                 child: Text(
                                   post['post_content'],
-                                  style: const TextStyle(fontSize: 16, color: Colors.black),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ),
                             if (_isValidImageUrl(imageUrl))
@@ -219,17 +233,26 @@ class _HomePageState extends State<HomePage> {
                                   width: double.infinity,
                                   height: 250,
                                   fit: BoxFit.cover,
-                                  loadingBuilder: (context, child, loadingProgress) {
+                                  loadingBuilder: (
+                                    context,
+                                    child,
+                                    loadingProgress,
+                                  ) {
                                     if (loadingProgress == null) return child;
                                     return Container(
                                       height: 250,
                                       color: Colors.grey.shade200,
                                       child: Center(
                                         child: CircularProgressIndicator(
-                                          value: loadingProgress.expectedTotalBytes != null
-                                              ? loadingProgress.cumulativeBytesLoaded /
-                                              loadingProgress.expectedTotalBytes!
-                                              : null,
+                                          value:
+                                              loadingProgress
+                                                          .expectedTotalBytes !=
+                                                      null
+                                                  ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                  : null,
                                         ),
                                       ),
                                     );
@@ -239,11 +262,21 @@ class _HomePageState extends State<HomePage> {
                                       height: 250,
                                       color: Colors.grey.shade200,
                                       child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
-                                          const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                                          const Icon(
+                                            Icons.broken_image,
+                                            size: 50,
+                                            color: Colors.grey,
+                                          ),
                                           const SizedBox(height: 8),
-                                          Text('Could not load image', style: TextStyle(color: Colors.grey.shade700)),
+                                          Text(
+                                            'Could not load image',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     );
@@ -251,13 +284,26 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                                vertical: 4,
+                              ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
                                 children: const [
-                                  Icon(Icons.thumb_up_outlined, color: Colors.black),
-                                  Icon(Icons.comment_outlined, color: Colors.black),
-                                  Icon(Icons.share_outlined, color: Colors.black),
+                                  Icon(
+                                    Icons.thumb_up_outlined,
+                                    color: Colors.black,
+                                  ),
+                                  Icon(
+                                    Icons.comment_outlined,
+                                    color: Colors.black,
+                                  ),
+                                  Icon(
+                                    Icons.share_outlined,
+                                    color: Colors.black,
+                                  ),
                                 ],
                               ),
                             ),
@@ -272,7 +318,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
