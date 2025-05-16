@@ -4,16 +4,16 @@ import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // Pages
-import 'landing_page.dart';
-import 'login.dart';
-import 'register.dart';
-import 'auth_service.dart';
-import 'home_page.dart';
+import 'posts/landing_page.dart';
+import 'auth/login.dart';
+import 'auth/register.dart';
+import 'auth/auth_service.dart';
+import 'home/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+  await Firebase.initializeApp();
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
