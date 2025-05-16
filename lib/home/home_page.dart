@@ -5,7 +5,7 @@ import '../auth/auth_service.dart';
 import '../posts/post_service.dart';
 import '../auth/profile_page.dart';
 import '../posts/post.dart';
-import '../posts/post_widget.dart';
+import '../posts/widgets/post_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

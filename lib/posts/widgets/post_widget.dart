@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../posts/post_service.dart';
+import '../post_service.dart';
 
 class PostWidget extends StatelessWidget {
   final Map<String, dynamic> post;
