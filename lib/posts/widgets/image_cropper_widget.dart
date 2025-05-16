@@ -202,10 +202,15 @@ class _ImageCropperWidgetState extends State<ImageCropperWidget> {
         ],
       );
       if (croppedFile != null) {
+        final file = File(croppedFile.path);
         setState(() {
           _croppedFile = croppedFile;
         });
-        widget.onImageCropped(File(croppedFile.path));
+        // Send the cropped file to parent
+        widget.onImageCropped(file);
+      } else {
+        // If user cancels cropping, keep the original file
+        widget.onImageCropped(_pickedFile!);
       }
     }
   }
@@ -213,10 +218,13 @@ class _ImageCropperWidgetState extends State<ImageCropperWidget> {
   Future<void> _uploadImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
+      final file = File(pickedFile.path);
       setState(() {
-        _pickedFile = File(pickedFile.path);
+        _pickedFile = file;
         _croppedFile = null;
       });
+      // Immediately send the original file to parent
+      widget.onImageCropped(file);
     }
   }
 

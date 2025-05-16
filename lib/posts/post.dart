@@ -54,12 +54,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       String? imageUrl;
 
       if (_imageFile != null) {
-        try {
-          await _imageFile!.readAsBytes();
-        } catch (e) {
-          throw Exception('Cannot read image: ${e.toString()}');
-        }
-
         final fileName =
             'posts/${DateTime.now().millisecondsSinceEpoch}_${_imageFile!.path.split('/').last}';
         final ref = FirebaseStorage.instance.ref().child(fileName);
@@ -185,17 +179,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             ],
             const SizedBox(height: 24),
             ImageCropperWidget(
-              onImageCropped: (File? croppedFile) {
-                if (croppedFile != null) {
-                  setState(() {
-                    _imageFile = croppedFile;
-                    _imageError = false;
-                  });
-                } else {
-                  setState(() {
-                    _imageFile = null;
-                  });
-                }
+              onImageCropped: (File? imageFile) {
+                setState(() {
+                  _imageFile =
+                      imageFile; // This will be set immediately when image is picked
+                  _imageError = imageFile == null;
+                });
               },
               isLoading: _isLoading,
               initialImage: _imageFile,
