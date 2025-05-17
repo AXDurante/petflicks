@@ -12,6 +12,7 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -22,6 +23,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   void dispose() {
+    _usernameController.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -43,18 +45,17 @@ class _RegisterPageState extends State<RegisterPage> {
         title: const Text('Register', style: TextStyle(color: Colors.black)),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
               Image.asset(
                 'assets/images/petflickslogo1.png',
                 height: 80,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               const Text(
                 'Create Account',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
@@ -62,13 +63,24 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 8),
               Text(
                 'Fill in your details to get started',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                style: TextStyle(color: Colors.grey, fontSize: 16),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
+                    _buildInputField(
+                      controller: _usernameController,
+                      label: 'Username',
+                      icon: Icons.account_circle,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Please enter a username';
+                        if (value.contains(' ')) return 'Username should not contain spaces';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
                     _buildInputField(
                       controller: _nameController,
                       label: 'Full Name',
@@ -141,6 +153,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           email: _emailController.text.trim(),
                           password: _passwordController.text.trim(),
                           name: _nameController.text.trim(),
+                          username: _usernameController.text.trim(),
                         );
                         Navigator.pushReplacementNamed(context, '/home');
                       } catch (e) {
@@ -162,7 +175,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       : const Text('Register', style: TextStyle(fontSize: 18, color: Colors.white)),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

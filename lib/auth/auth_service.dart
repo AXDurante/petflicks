@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Stream to track auth state changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -11,6 +13,7 @@ class AuthService {
     required String email,
     required String password,
     required String name,
+    required String username,
   }) async {
     try {
       UserCredential credential = await _auth.createUserWithEmailAndPassword(
@@ -20,6 +23,14 @@ class AuthService {
 
       // Update user display name
       await credential.user?.updateDisplayName(name);
+
+      // Write additional user info (username) to Firestore
+      await _firestore.collection('Users').doc(credential.user!.uid).set({
+        'username': username,
+        'name': name,
+        'email': email,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
       return credential.user;
     } on FirebaseAuthException catch (e) {
