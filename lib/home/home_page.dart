@@ -69,6 +69,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final userId = user?.uid;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -94,25 +95,84 @@ class _HomePageState extends State<HomePage> {
               children: [
                 _buildUserAvatar(photoUrl: user?.photoURL),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user?.displayName ?? 'User',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.black,
-                      ),
-                    ),
-                    Text(
-                      user?.email ?? '',
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                StreamBuilder<DocumentSnapshot>(
+                  stream:
+                      userId != null
+                          ? FirebaseFirestore.instance
+                              .collection('Users')
+                              .doc(userId)
+                              .snapshots()
+                          : null,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.displayName ?? 'User',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
+                          ),
+                          Text(
+                            '@username',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.displayName ?? 'User',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 14,
+                            width: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ],
+                      );
+                    }
+
+                    final userData =
+                        snapshot.data?.data() as Map<String, dynamic>?;
+                    final username = userData?['username'] ?? 'username';
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user?.displayName ?? 'User',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black,
+                          ),
+                        ),
+                        Text(
+                          '@$username',
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),

@@ -11,6 +11,11 @@ class PostService {
   CollectionReference<Map<String, dynamic>> get _postsCollection =>
       _firestore.collection('Posts');
 
+  // Get user document reference
+  Future<DocumentSnapshot> _getUserDocument(String userId) async {
+    return await _firestore.collection('Users').doc(userId).get();
+  }
+
   // Create a new post
   Future<void> createPost({
     required String content,
@@ -28,9 +33,15 @@ class PostService {
         return;
       }
 
+      // Get user data including username
+      final userDoc = await _getUserDocument(user.uid);
+      final userData = userDoc.data() as Map<String, dynamic>?;
+      final username = userData?['username'] ?? 'unknown';
+
       // Create post data matching the Firebase structure shown in screenshot
       final postData = {
-        'FK_users_Id': user.uid,
+        'userId': user.uid,
+        'username': username, // Add username to post
         'post_content': content,
         'date_created': FieldValue.serverTimestamp(),
         'date_edited': FieldValue.serverTimestamp(),

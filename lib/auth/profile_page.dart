@@ -134,6 +134,7 @@ class ProfilePage extends StatelessWidget {
           children: [
             Center(child: _buildUserAvatar(user?.photoURL)),
             const SizedBox(height: 16),
+            // Display the display name
             Text(
               user?.displayName ?? 'No Display Name',
               style: const TextStyle(
@@ -143,9 +144,41 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
+            // Display the email
             Text(
               user?.email ?? 'No email',
               style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            // StreamBuilder to fetch and display the username from Firestore
+            StreamBuilder<DocumentSnapshot>(
+              stream:
+                  userId != null
+                      ? FirebaseFirestore.instance
+                          .collection('Users')
+                          .doc(userId)
+                          .snapshots()
+                      : null,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Text(
+                    'Error: ${snapshot.error}',
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
+                  );
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(); // Return empty widget while loading
+                }
+
+                final userData = snapshot.data?.data() as Map<String, dynamic>?;
+                final username = userData?['username'] ?? 'No username';
+
+                return Text(
+                  '@$username',
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
+                );
+              },
             ),
             const SizedBox(height: 24),
             const Divider(),
@@ -163,7 +196,7 @@ class ProfilePage extends StatelessWidget {
                   userId != null
                       ? FirebaseFirestore.instance
                           .collection('Posts')
-                          .where('FK_users_Id', isEqualTo: userId)
+                          .where('userId', isEqualTo: userId)
                           .orderBy('date_created', descending: true)
                           .snapshots()
                       : null,
@@ -180,10 +213,7 @@ class ProfilePage extends StatelessWidget {
                   return Column(
                     children: [
                       const SizedBox(height: 40),
-                      Image.asset(
-                        'assets/images/empty_posts.png', // Add your own asset
-                        height: 150,
-                      ),
+                      Image.asset('assets/images/empty_posts.png', height: 150),
                       const SizedBox(height: 20),
                       const Text(
                         'No posts yet',

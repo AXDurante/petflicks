@@ -65,8 +65,8 @@ class PostWidget extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'User',
+                      Text(
+                        '@' + post['username'],
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
@@ -83,7 +83,7 @@ class PostWidget extends StatelessWidget {
                     ],
                   ),
                   const Spacer(),
-                  if (post['FK_users_Id'] == currentUser?.uid)
+                  if (post['userId'] == currentUser?.uid)
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, color: Colors.black),
                       onSelected: (value) async {
@@ -119,27 +119,10 @@ class PostWidget extends StatelessWidget {
               ),
             ),
 
-            // Post content
-            if (post['post_content'] != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8,
-                ),
-                child: Text(
-                  post['post_content'],
-                  style: const TextStyle(fontSize: 16, color: Colors.black),
-                ),
-              ),
-
             // Post image
             if (_isValidImageUrl(post['post_image']) ||
                 _isValidImageUrl(post['post_url']))
               ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
-                ),
                 child: Image.network(
                   _isValidImageUrl(post['post_image'])
                       ? post['post_image']
@@ -187,6 +170,23 @@ class PostWidget extends StatelessWidget {
                 ),
               ),
 
+            const SizedBox(height: 5),
+
+            // Post content
+            if (post['post_content'] != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8,
+                ),
+                child: Text(
+                  post['post_content'],
+                  style: const TextStyle(fontSize: 16, color: Colors.black),
+                ),
+              ),
+
+            const SizedBox(height: 5),
+
             // Action buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
@@ -199,6 +199,8 @@ class PostWidget extends StatelessWidget {
                 ],
               ),
             ),
+
+            const SizedBox(height: 8),
           ],
         ),
       ),
