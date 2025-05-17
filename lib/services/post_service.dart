@@ -24,7 +24,6 @@ class PostService {
     required BuildContext context,
   }) async {
     try {
-      // Check if user is logged in
       final user = _auth.currentUser;
       if (user == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -33,31 +32,42 @@ class PostService {
         return;
       }
 
-      // Get user data including username
-      final userDoc = await _getUserDocument(user.uid);
-      final userData = userDoc.data() as Map<String, dynamic>?;
-      final username = userData?['username'] ?? 'unknown';
+      // Debug print to verify auth state
+      debugPrint('Creating post as user: ${user.uid}');
 
-      // Create post data matching the Firebase structure shown in screenshot
+      // Get user data with error handling
+      String username;
+      try {
+        final userDoc = await _getUserDocument(user.uid);
+        if (!userDoc.exists) {
+          throw Exception('User document not found');
+        }
+        final userData = userDoc.data() as Map<String, dynamic>?;
+        username = userData?['username'] ?? 'unknown';
+      } catch (e) {
+        debugPrint('Error getting user data: $e');
+        username = 'unknown';
+      }
+
       final postData = {
-        'userId': user.uid,
-        'username': username, // Add username to post
+        'userId': user.uid, // Must match auth uid per your rules
+        'username': username,
         'post_content': content,
         'date_created': FieldValue.serverTimestamp(),
         'date_edited': FieldValue.serverTimestamp(),
       };
 
-      // Add image URL if provided
       if (imageUrl != null && imageUrl.isNotEmpty) {
         postData['post_image'] = imageUrl;
       }
 
-      // Add URL if provided
       if (url != null && url.isNotEmpty) {
         postData['post_url'] = url;
       }
 
-      // Add to Firestore
+      // Debug print to verify post data
+      debugPrint('Post data: $postData');
+
       await _postsCollection.add(postData);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -67,13 +77,14 @@ class PostService {
         ),
       );
     } catch (e) {
+      debugPrint('Full error creating post: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error creating post: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
-      rethrow; // Rethrow to handle in the UI
+      rethrow;
     }
   }
 

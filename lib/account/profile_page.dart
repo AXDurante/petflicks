@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'settings_page.dart';
+import '../widgets/post_widget.dart';
+import '../services/post_service.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -22,102 +25,11 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildPostItem(DocumentSnapshot post) {
-    final data = post.data() as Map<String, dynamic>?;
-    final date = data?['date_created']?.toDate() ?? DateTime.now();
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.grey.shade200,
-                child: const Icon(Icons.person, size: 20),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'You',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
-                      ),
-                    ),
-                    Text(
-                      '${date.day}/${date.month}/${date.year}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            data?['post_content'] ?? 'No content',
-            style: const TextStyle(fontSize: 16),
-          ),
-          if (data?['post_image'] != null) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                data!['post_image'],
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.favorite_border, size: 20),
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(Icons.comment_outlined, size: 20),
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(Icons.share, size: 20),
-                onPressed: () {},
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final userId = user?.uid;
+    final postService = PostService();
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
@@ -245,9 +157,16 @@ class ProfilePage extends StatelessWidget {
 
                 return Column(
                   children:
-                      snapshot.data!.docs
-                          .map((doc) => _buildPostItem(doc))
-                          .toList(),
+                      snapshot.data!.docs.map((doc) {
+                        final post = doc.data() as Map<String, dynamic>;
+                        return PostWidget(
+                          post: post,
+                          postId: doc.id,
+                          postService: postService,
+                          currentUser: user,
+                          timestamp: post['date_created'],
+                        );
+                      }).toList(),
                 );
               },
             ),
@@ -263,7 +182,12 @@ class ProfilePage extends StatelessWidget {
                 size: 16,
                 color: Colors.black,
               ),
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                );
+              },
             ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),

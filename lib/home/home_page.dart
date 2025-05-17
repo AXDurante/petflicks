@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../auth/auth_service.dart';
-import '../posts/post_service.dart';
-import '../auth/profile_page.dart';
+import '../services/auth_service.dart';
+import '../services/post_service.dart';
+import '../account/profile_page.dart';
 import '../posts/post.dart';
-import '../posts/widgets/post_widget.dart';
+import '../widgets/post_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -58,12 +58,6 @@ class _HomePageState extends State<HomePage> {
       backgroundImage: NetworkImage(photoUrl),
       backgroundColor: Colors.grey.shade300,
     );
-  }
-
-  bool _isValidImageUrl(String? url) {
-    if (url == null || url.isEmpty) return false;
-    if (url.contains('example.com')) return false;
-    return true;
   }
 
   @override

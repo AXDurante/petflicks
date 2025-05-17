@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
-import 'post_service.dart';
-import 'widgets/image_cropper_widget.dart';
+import '../services/post_service.dart';
+import '../widgets/image_cropper_widget.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});

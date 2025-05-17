@@ -42,10 +42,7 @@ class _LandingPageState extends State<LandingPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/images/boxlogopflix.png',
-                  height: 300,
-                ),
+                Image.asset('assets/images/boxlogopflix.png', height: 300),
                 const SizedBox(width: 10),
                 const Text(
                   '',

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../post_service.dart';
+import '../services/post_service.dart';
 
 class PostWidget extends StatelessWidget {
   final Map<String, dynamic> post;
@@ -60,7 +60,32 @@ class PostWidget extends StatelessWidget {
               padding: const EdgeInsets.all(12.0),
               child: Row(
                 children: [
-                  _buildUserAvatar(radius: 20),
+                  // Modified avatar section to use StreamBuilder
+                  StreamBuilder<DocumentSnapshot>(
+                    stream:
+                        FirebaseFirestore.instance
+                            .collection('Users')
+                            .doc(post['userId'])
+                            .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return _buildUserAvatar(radius: 20);
+                      }
+
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return _buildUserAvatar(radius: 20);
+                      }
+
+                      final userData =
+                          snapshot.data?.data() as Map<String, dynamic>?;
+                      final profilePicture = userData?['profile_picture'];
+
+                      return _buildUserAvatar(
+                        photoUrl: profilePicture,
+                        radius: 20,
+                      );
+                    },
+                  ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +144,7 @@ class PostWidget extends StatelessWidget {
               ),
             ),
 
-            // Post image
+            // Rest of the post widget remains the same
             if (_isValidImageUrl(post['post_image']) ||
                 _isValidImageUrl(post['post_url']))
               ClipRRect(
@@ -172,7 +197,6 @@ class PostWidget extends StatelessWidget {
 
             const SizedBox(height: 5),
 
-            // Post content
             if (post['post_content'] != null)
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -187,7 +211,6 @@ class PostWidget extends StatelessWidget {
 
             const SizedBox(height: 5),
 
-            // Action buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
               child: Row(

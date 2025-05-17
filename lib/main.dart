@@ -5,9 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // Pages
 import 'posts/landing_page.dart';
-import 'auth/login.dart';
-import 'auth/register.dart';
-import 'auth/auth_service.dart';
+import 'account/login.dart';
+import 'account/register.dart';
+import 'services/auth_service.dart';
 import 'home/home_page.dart';
 
 void main() async {
