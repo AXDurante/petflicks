@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'auth_service.dart';
+import 'package:petflicks/auth/auth_service.dart';
 import 'post_service.dart';
-import 'profile_page.dart';
+import 'package:petflicks/auth/profile_page.dart';
 import 'post.dart';
 
 class HomePage extends StatefulWidget {
