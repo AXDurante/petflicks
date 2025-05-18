@@ -4,7 +4,7 @@ import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // Pages
-import 'posts/landing_page.dart';
+import 'landing_page.dart';
 import 'account/login.dart';
 import 'account/register.dart';
 import 'services/auth_service.dart';

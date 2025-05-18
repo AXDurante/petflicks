@@ -55,6 +55,9 @@ class PostService {
         'post_content': content,
         'date_created': FieldValue.serverTimestamp(),
         'date_edited': FieldValue.serverTimestamp(),
+        'likes_count': 0,
+        'comment_count': 0,
+        'favorites_count': 0,
       };
 
       if (imageUrl != null && imageUrl.isNotEmpty) {

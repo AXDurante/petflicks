@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/post_service.dart';
+import '../services/likes_service.dart';
+import '../buttons/like_button.dart';
 
 class PostWidget extends StatelessWidget {
   final Map<String, dynamic> post;
@@ -9,8 +11,9 @@ class PostWidget extends StatelessWidget {
   final PostService postService;
   final User? currentUser;
   final Timestamp? timestamp;
+  final LikesService _likesService = LikesService();
 
-  const PostWidget({
+  PostWidget({
     super.key,
     required this.post,
     required this.postId,
@@ -144,7 +147,7 @@ class PostWidget extends StatelessWidget {
               ),
             ),
 
-            // Rest of the post widget remains the same
+            // Post image
             if (_isValidImageUrl(post['post_image']) ||
                 _isValidImageUrl(post['post_url']))
               ClipRRect(
@@ -197,6 +200,7 @@ class PostWidget extends StatelessWidget {
 
             const SizedBox(height: 5),
 
+            // Post content
             if (post['post_content'] != null)
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -211,14 +215,33 @@ class PostWidget extends StatelessWidget {
 
             const SizedBox(height: 5),
 
+            // Like and Comment buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: const [
-                  Icon(Icons.thumb_up_outlined, color: Colors.black),
-                  Icon(Icons.comment_outlined, color: Colors.black),
-                  Icon(Icons.share_outlined, color: Colors.black),
+                children: [
+                  // Like button with count
+                  Row(
+                    children: [
+                      LikeButton(
+                        postId: postId,
+                        likesService: _likesService,
+                        currentUser: currentUser,
+                      ),
+                    ],
+                  ),
+
+                  // Comment button
+                  IconButton(
+                    icon: const Icon(
+                      Icons.comment_outlined,
+                      color: Colors.black,
+                    ),
+                    onPressed: () {
+                      // Add comment functionality here
+                    },
+                  ),
                 ],
               ),
             ),
