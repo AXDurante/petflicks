@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/post_service.dart';
 import '../services/likes_service.dart';
 import '../buttons/like_button.dart';
+import '../buttons/comments/comment_button.dart';
+import '../services/comments_services/comment_service.dart';
+import 'comment_section_widget.dart';
 
 class PostWidget extends StatelessWidget {
   final Map<String, dynamic> post;
@@ -48,6 +51,7 @@ class PostWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final postDate = timestamp?.toDate() ?? DateTime.now();
+    final CommentService _commentService = CommentService();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
@@ -233,13 +237,27 @@ class PostWidget extends StatelessWidget {
                   ),
 
                   // Comment button
-                  IconButton(
-                    icon: const Icon(
-                      Icons.comment_outlined,
-                      color: Colors.black,
-                    ),
+                  CommentButton(
+                    postId: postId,
+                    commentService: _commentService,
+                    currentUser: currentUser,
                     onPressed: () {
-                      // Add comment functionality here
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder:
+                            (context) => DraggableScrollableSheet(
+                              expand: false,
+                              initialChildSize: 0.7,
+                              maxChildSize: 0.9,
+                              minChildSize: 0.5,
+                              builder:
+                                  (context, scrollController) => CommentSection(
+                                    postId: postId,
+                                    currentUser: currentUser,
+                                  ),
+                            ),
+                      );
                     },
                   ),
                 ],
