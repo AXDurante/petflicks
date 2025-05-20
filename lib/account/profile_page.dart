@@ -6,7 +6,9 @@ import '../widgets/post_widget.dart';
 import '../services/post_service.dart';
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+  final String? userId; // Null means current user
+
+  const ProfilePage({super.key, this.userId});
 
   Widget _buildUserAvatar(String? photoUrl) {
     if (photoUrl == null ||
@@ -25,11 +27,34 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
+  Widget _buildFollowButton(BuildContext context, bool isCurrentUser) {
+    if (isCurrentUser) {
+      return const SizedBox(); // No follow button for current user
+    }
+    return ElevatedButton(
+      onPressed: () {
+        // Implement follow functionality
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      ),
+      child: const Text('Follow', style: TextStyle(color: Colors.white)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final userId = user?.uid;
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final profileUserId = userId ?? currentUser?.uid;
     final postService = PostService();
+
+    if (profileUserId == null) {
+      return const Scaffold(body: Center(child: Text('User not found')));
+    }
+
+    final isCurrentUser = profileUserId == currentUser?.uid;
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
@@ -38,168 +63,261 @@ class ProfilePage extends StatelessWidget {
         elevation: 1,
         title: const Text('Profile', style: TextStyle(color: Colors.black)),
         centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Center(child: _buildUserAvatar(user?.photoURL)),
-            const SizedBox(height: 16),
-            // Display the display name
-            Text(
-              user?.displayName ?? 'No Display Name',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Display the email
-            Text(
-              user?.email ?? 'No email',
-              style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            // StreamBuilder to fetch and display the username from Firestore
-            StreamBuilder<DocumentSnapshot>(
-              stream:
-                  userId != null
-                      ? FirebaseFirestore.instance
-                          .collection('Users')
-                          .doc(userId)
-                          .snapshots()
-                      : null,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Text(
-                    'Error: ${snapshot.error}',
-                    style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
-                  );
-                }
-
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(); // Return empty widget while loading
-                }
-
-                final userData = snapshot.data?.data() as Map<String, dynamic>?;
-                final username = userData?['username'] ?? 'No username';
-
-                return Text(
-                  '@$username',
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 16),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Your Posts',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 16),
-            StreamBuilder<QuerySnapshot>(
-              stream:
-                  userId != null
-                      ? FirebaseFirestore.instance
-                          .collection('Posts')
-                          .where('userId', isEqualTo: userId)
-                          .orderBy('date_created', descending: true)
-                          .snapshots()
-                      : null,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Column(
-                    children: [
-                      const SizedBox(height: 40),
-                      Image.asset('assets/images/empty_posts.png', height: 150),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'No posts yet',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/create_post');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                        ),
-                        child: const Text(
-                          'Create your first post',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  );
-                }
-
-                return Column(
-                  children:
-                      snapshot.data!.docs.map((doc) {
-                        final post = doc.data() as Map<String, dynamic>;
-                        return PostWidget(
-                          post: post,
-                          postId: doc.id,
-                          postService: postService,
-                          currentUser: user,
-                          timestamp: post['date_created'],
-                        );
-                      }).toList(),
-                );
-              },
-            ),
-            const SizedBox(height: 32),
-            ListTile(
-              leading: const Icon(Icons.settings, color: Colors.black),
-              title: const Text(
-                'Settings',
-                style: TextStyle(color: Colors.black),
-              ),
-              trailing: const Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: Colors.black,
-              ),
-              onTap: () {
+        actions: [
+          if (isCurrentUser)
+            IconButton(
+              icon: const Icon(Icons.settings, color: Colors.black),
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const SettingsPage()),
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Logout', style: TextStyle(color: Colors.red)),
-              onTap: () async {
-                await FirebaseAuth.instance.signOut();
-                if (context.mounted) {
-                  Navigator.popUntil(context, (route) => route.isFirst);
-                }
-              },
-            ),
-          ],
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: FutureBuilder<DocumentSnapshot>(
+          future:
+              FirebaseFirestore.instance
+                  .collection('Users')
+                  .doc(profileUserId)
+                  .get(),
+          builder: (context, userSnapshot) {
+            if (userSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (!userSnapshot.hasData || userSnapshot.data!.data() == null) {
+              return const Center(child: Text('User not found'));
+            }
+
+            final userData = userSnapshot.data!.data() as Map<String, dynamic>;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Center(child: _buildUserAvatar(userData['profile_picture'])),
+                const SizedBox(height: 16),
+                Text(
+                  userData['name'] ?? 'No name',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (isCurrentUser)
+                  Text(
+                    currentUser?.email ?? 'No email',
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
+                  ),
+                const SizedBox(height: 8),
+                Text(
+                  '@${userData['username'] ?? 'nousername'}',
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                _buildFollowButton(context, isCurrentUser),
+                const SizedBox(height: 24),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        children: [
+                          StreamBuilder<QuerySnapshot>(
+                            stream:
+                                FirebaseFirestore.instance
+                                    .collection('Posts')
+                                    .where('userId', isEqualTo: profileUserId)
+                                    .snapshots(),
+                            builder: (context, snapshot) {
+                              return Text(
+                                snapshot.hasData
+                                    ? '${snapshot.data!.docs.length}'
+                                    : '0',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            },
+                          ),
+                          const Text('Posts'),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          StreamBuilder<QuerySnapshot>(
+                            stream:
+                                FirebaseFirestore.instance
+                                    .collection('Users')
+                                    .doc(profileUserId)
+                                    .collection('followers')
+                                    .snapshots(),
+                            builder: (context, snapshot) {
+                              return Text(
+                                snapshot.hasData
+                                    ? '${snapshot.data!.docs.length}'
+                                    : '0',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            },
+                          ),
+                          const Text('Followers'),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          StreamBuilder<QuerySnapshot>(
+                            stream:
+                                FirebaseFirestore.instance
+                                    .collection('Users')
+                                    .doc(profileUserId)
+                                    .collection('following')
+                                    .snapshots(),
+                            builder: (context, snapshot) {
+                              return Text(
+                                snapshot.hasData
+                                    ? '${snapshot.data!.docs.length}'
+                                    : '0',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            },
+                          ),
+                          const Text('Following'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (userData['bio'] != null &&
+                    userData['bio'].toString().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(
+                      userData['bio'].toString(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey.shade700),
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 16),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(
+                      'Posts',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                StreamBuilder<QuerySnapshot>(
+                  stream:
+                      FirebaseFirestore.instance
+                          .collection('Posts')
+                          .where('userId', isEqualTo: profileUserId)
+                          .orderBy('date_created', descending: true)
+                          .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
+
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return Column(
+                        children: [
+                          const SizedBox(height: 40),
+                          Image.asset(
+                            'assets/images/empty_posts.png',
+                            height: 150,
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            isCurrentUser ? 'No posts yet' : 'No posts',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          if (isCurrentUser) ...[
+                            const SizedBox(height: 10),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/create_post');
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                              ),
+                              child: const Text(
+                                'Create your first post',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ],
+                      );
+                    }
+
+                    return Column(
+                      children:
+                          snapshot.data!.docs.map((doc) {
+                            final post = doc.data() as Map<String, dynamic>;
+                            return PostWidget(
+                              post: post,
+                              postId: doc.id,
+                              postService: postService,
+                              currentUser: currentUser,
+                              timestamp: post['date_created'],
+                            );
+                          }).toList(),
+                    );
+                  },
+                ),
+                if (isCurrentUser) ...[
+                  const SizedBox(height: 32),
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text(
+                      'Logout',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    onTap: () async {
+                      await FirebaseAuth.instance.signOut();
+                      if (context.mounted) {
+                        Navigator.popUntil(context, (route) => route.isFirst);
+                      }
+                    },
+                  ),
+                ],
+              ],
+            );
+          },
         ),
       ),
     );

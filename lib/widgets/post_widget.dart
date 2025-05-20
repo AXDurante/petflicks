@@ -7,6 +7,7 @@ import '../buttons/like_button.dart';
 import '../buttons/comments/comment_button.dart';
 import '../services/comments_services/comment_service.dart';
 import 'comment_section_widget.dart';
+import '../account/profile_page.dart';
 
 class PostWidget extends StatelessWidget {
   final Map<String, dynamic> post;
@@ -63,91 +64,102 @@ class PostWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header with user info and menu
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                children: [
-                  // Modified avatar section to use StreamBuilder
-                  StreamBuilder<DocumentSnapshot>(
-                    stream:
-                        FirebaseFirestore.instance
-                            .collection('Users')
-                            .doc(post['userId'])
-                            .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return _buildUserAvatar(radius: 20);
-                      }
-
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return _buildUserAvatar(radius: 20);
-                      }
-
-                      final userData =
-                          snapshot.data?.data() as Map<String, dynamic>?;
-                      final profilePicture = userData?['profile_picture'];
-
-                      return _buildUserAvatar(
-                        photoUrl: profilePicture,
-                        radius: 20,
-                      );
-                    },
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(userId: post['userId']),
                   ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '@' + post['username'],
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      Text(
-                        '${postDate.day}/${postDate.month}/${postDate.year} '
-                        '${postDate.hour}:${postDate.minute.toString().padLeft(2, '0')}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  if (post['userId'] == currentUser?.uid)
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, color: Colors.black),
-                      onSelected: (value) async {
-                        if (value == 'delete') {
-                          try {
-                            final imageUrl = post['post_image'];
-                            await postService.deletePost(postId, imageUrl);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Post deleted successfully'),
-                              ),
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Failed to delete post: ${e.toString()}',
-                                ),
-                              ),
-                            );
-                          }
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  children: [
+                    // Modified avatar section to use StreamBuilder
+                    StreamBuilder<DocumentSnapshot>(
+                      stream:
+                          FirebaseFirestore.instance
+                              .collection('Users')
+                              .doc(post['userId'])
+                              .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return _buildUserAvatar(radius: 20);
                         }
+
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return _buildUserAvatar(radius: 20);
+                        }
+
+                        final userData =
+                            snapshot.data?.data() as Map<String, dynamic>?;
+                        final profilePicture = userData?['profile_picture'];
+
+                        return _buildUserAvatar(
+                          photoUrl: profilePicture,
+                          radius: 20,
+                        );
                       },
-                      itemBuilder:
-                          (context) => [
-                            const PopupMenuItem<String>(
-                              value: 'delete',
-                              child: Text('Delete'),
-                            ),
-                          ],
                     ),
-                ],
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '@' + post['username'],
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        Text(
+                          '${postDate.day}/${postDate.month}/${postDate.year} '
+                          '${postDate.hour}:${postDate.minute.toString().padLeft(2, '0')}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    if (post['userId'] == currentUser?.uid)
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, color: Colors.black),
+                        onSelected: (value) async {
+                          if (value == 'delete') {
+                            try {
+                              final imageUrl = post['post_image'];
+                              await postService.deletePost(postId, imageUrl);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Post deleted successfully'),
+                                ),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Failed to delete post: ${e.toString()}',
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        itemBuilder:
+                            (context) => [
+                              const PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Text('Delete'),
+                              ),
+                            ],
+                      ),
+                  ],
+                ),
               ),
             ),
 

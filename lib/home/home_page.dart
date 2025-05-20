@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import '../services/post_service.dart';
+import '../widgets/search_widget.dart';
 import '../account/profile_page.dart';
 import '../posts/post.dart';
 import '../widgets/post_widget.dart';
@@ -18,6 +19,7 @@ class _HomePageState extends State<HomePage> {
   final PostService _postService = PostService();
   final AuthService _auth = AuthService();
   int _selectedIndex = 0;
+  bool _isSearching = false;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -40,6 +42,12 @@ class _HomePageState extends State<HomePage> {
         );
         break;
     }
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+    });
   }
 
   Widget _buildUserAvatar({String? photoUrl, double radius = 24}) {
@@ -68,11 +76,18 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Image.asset('assets/images/petflickslogo1.png', height: 40),
+        title:
+            _isSearching
+                ? null
+                : Image.asset('assets/images/petflickslogo1.png', height: 40),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 1,
         actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: _toggleSearch,
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.black),
             onPressed: () async {
@@ -81,135 +96,164 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                _buildUserAvatar(photoUrl: user?.photoURL),
-                const SizedBox(width: 12),
-                StreamBuilder<DocumentSnapshot>(
-                  stream:
-                      userId != null
-                          ? FirebaseFirestore.instance
-                              .collection('Users')
-                              .doc(userId)
-                              .snapshots()
-                          : null,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user?.displayName ?? 'User',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.black,
-                            ),
+      body:
+          _isSearching
+              ? SearchWidget(currentUser: user, postService: _postService)
+              : Column(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      if (userId != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProfilePage(userId: userId),
                           ),
-                          Text(
-                            '@username',
-                            style: TextStyle(
-                              color: Colors.grey.shade700,
-                              fontSize: 14,
-                            ),
+                        );
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          _buildUserAvatar(photoUrl: user?.photoURL),
+                          const SizedBox(width: 12),
+                          StreamBuilder<DocumentSnapshot>(
+                            stream:
+                                userId != null
+                                    ? FirebaseFirestore.instance
+                                        .collection('Users')
+                                        .doc(userId)
+                                        .snapshots()
+                                    : null,
+                            builder: (context, snapshot) {
+                              if (snapshot.hasError) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      user?.displayName ?? 'User',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    Text(
+                                      '@username',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade700,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      user?.displayName ?? 'User',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: 14,
+                                      width: 14,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              final userData =
+                                  snapshot.data?.data()
+                                      as Map<String, dynamic>?;
+                              final username =
+                                  userData?['username'] ?? 'username';
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    user?.displayName ?? 'User',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  Text(
+                                    '@$username',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade700,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ],
-                      );
-                    }
+                      ),
+                    ),
+                  ),
 
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user?.displayName ?? 'User',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.black,
+                  Expanded(
+                    child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      stream: _postService.getPosts(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text('Error: ${snapshot.error}'),
+                          );
+                        }
+
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              'No posts yet. Create your first post!',
                             ),
-                          ),
-                          const SizedBox(
-                            height: 14,
-                            width: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ],
-                      );
-                    }
+                          );
+                        }
 
-                    final userData =
-                        snapshot.data?.data() as Map<String, dynamic>?;
-                    final username = userData?['username'] ?? 'username';
+                        return ListView.builder(
+                          itemCount: snapshot.data!.docs.length,
+                          itemBuilder: (context, index) {
+                            final post = snapshot.data!.docs[index].data();
+                            final postId = snapshot.data!.docs[index].id;
+                            final timestamp =
+                                post['date_created'] as Timestamp?;
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user?.displayName ?? 'User',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.black,
-                          ),
-                        ),
-                        Text(
-                          '@$username',
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: _postService.getPosts(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text('No posts yet. Create your first post!'),
-                  );
-                }
-
-                return ListView.builder(
-                  itemCount: snapshot.data!.docs.length,
-                  itemBuilder: (context, index) {
-                    final post = snapshot.data!.docs[index].data();
-                    final postId = snapshot.data!.docs[index].id;
-                    final timestamp = post['date_created'] as Timestamp?;
-
-                    return PostWidget(
-                      post: post,
-                      postId: postId,
-                      postService: _postService,
-                      currentUser: user,
-                      timestamp: timestamp,
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+                            return PostWidget(
+                              post: post,
+                              postId: postId,
+                              postService: _postService,
+                              currentUser: user,
+                              timestamp: timestamp,
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
