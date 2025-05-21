@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/auth_service.dart';
 import 'settings_page.dart';
 import '../widgets/post_widget.dart';
 import '../services/post_service.dart';
@@ -27,20 +28,54 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildFollowButton(BuildContext context, bool isCurrentUser) {
+  Widget _buildFollowButton(
+    BuildContext context,
+    bool isCurrentUser,
+    String profileUserId,
+  ) {
     if (isCurrentUser) {
       return const SizedBox(); // No follow button for current user
     }
-    return ElevatedButton(
-      onPressed: () {
-        // Implement follow functionality
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return const SizedBox();
+
+    final authService = AuthService();
+
+    return StreamBuilder<bool>(
+      stream: authService.isFollowing(currentUser.uid, profileUserId),
+      builder: (context, snapshot) {
+        final isFollowing = snapshot.data ?? false;
+
+        return ElevatedButton(
+          onPressed: () async {
+            if (snapshot.connectionState == ConnectionState.waiting) return;
+
+            try {
+              if (isFollowing) {
+                await authService.unfollowUser(currentUser.uid, profileUserId);
+              } else {
+                await authService.followUser(currentUser.uid, profileUserId);
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isFollowing ? Colors.grey : Colors.blue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          ),
+          child: Text(
+            isFollowing ? 'Following' : 'Follow',
+            style: const TextStyle(color: Colors.white),
+          ),
+        );
       },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      ),
-      child: const Text('Follow', style: TextStyle(color: Colors.white)),
     );
   }
 
@@ -119,7 +154,7 @@ class ProfilePage extends StatelessWidget {
                   style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
                 ),
                 const SizedBox(height: 16),
-                _buildFollowButton(context, isCurrentUser),
+                _buildFollowButton(context, isCurrentUser, profileUserId),
                 const SizedBox(height: 24),
                 const Divider(),
                 Padding(

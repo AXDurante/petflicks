@@ -89,4 +89,72 @@ class AuthService {
         return 'An unknown error occurred.';
     }
   }
+
+  // Follow a user
+  Future<void> followUser(String currentUserId, String userIdToFollow) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Add to current user's following collection
+      final followingRef = _firestore
+          .collection('Users')
+          .doc(currentUserId)
+          .collection('following')
+          .doc(userIdToFollow);
+      batch.set(followingRef, {'timestamp': FieldValue.serverTimestamp()});
+
+      // Add to target user's followers collection
+      final followersRef = _firestore
+          .collection('Users')
+          .doc(userIdToFollow)
+          .collection('followers')
+          .doc(currentUserId);
+      batch.set(followersRef, {'timestamp': FieldValue.serverTimestamp()});
+
+      await batch.commit();
+    } catch (e) {
+      throw 'Failed to follow user: ${e.toString()}';
+    }
+  }
+
+  // Unfollow a user
+  Future<void> unfollowUser(
+    String currentUserId,
+    String userIdToUnfollow,
+  ) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Remove from current user's following collection
+      final followingRef = _firestore
+          .collection('Users')
+          .doc(currentUserId)
+          .collection('following')
+          .doc(userIdToUnfollow);
+      batch.delete(followingRef);
+
+      // Remove from target user's followers collection
+      final followersRef = _firestore
+          .collection('Users')
+          .doc(userIdToUnfollow)
+          .collection('followers')
+          .doc(currentUserId);
+      batch.delete(followersRef);
+
+      await batch.commit();
+    } catch (e) {
+      throw 'Failed to unfollow user: ${e.toString()}';
+    }
+  }
+
+  // Check if current user is following another user
+  Stream<bool> isFollowing(String currentUserId, String otherUserId) {
+    return _firestore
+        .collection('Users')
+        .doc(currentUserId)
+        .collection('following')
+        .doc(otherUserId)
+        .snapshots()
+        .map((snapshot) => snapshot.exists);
+  }
 }
